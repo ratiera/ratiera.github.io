@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Synth</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzicato/0.6.4/Pizzicato.js"></script>
+    <!--css formating-->
+    <style>
+
+        body {
+            background-image: url('./coke.jpg');
+            color: white
+        }
+
+
+        .container {
+            display: flex;
+        }
+
+        .column {
+            flex: 0.2;
+            margin: 10px;
+            padding: 20px;
+            border: 10px solid #a19a1e7a;
+        }
+        #oscOnButton {
+            background-color: rgb(102, 179, 15);
+            color: white;
+            border: none;
+            padding: 20px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #oscOffButton {
+            background-color:rgb(179, 15, 15);
+            color: white;
+            border: none;
+            padding: 20px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #fileOnButton {
+            background-color: rgb(102, 179, 15);
+            color: white;
+            border: none;
+            padding: 20px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #fileOffButton {
+            background-color:rgb(179, 15, 15);
+            color: white;
+            border: none;
+            padding: 20px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+
+<body>
+    <section class="container">
+        
+        <div class="oscillator-audio-container"> <div class="column">
+            <h2>Oscillator</h2>
+            <button id="oscOnButton">Play</button>
+            <button id="oscOffButton">stop</button>
+            <div>
+                <p>Frequency</p>
+                <input type="range" min="100" max="10000" id="freq">
+            </div>
+            <div>
+                <p>Oscillator Volume</p>
+                <input type="range" min="0" max="1" step="0.01" id="vol">
+            </div>
+            <div>
+                <p>Waveform</p>
+                <select id="waveformSelect">
+                  <option value="sine">Sine</option>
+                  <option value="square">Square</option>
+                  <option value="triangle">Triangle</option>
+                  <option value="sawtooth">Sawtooth</option>
+                  </select>
+              </div>
+        </div>
+
+        <div class="column"> 
+            <h2>Open The Can</h2> 
+            <div>
+            <p>Volume</p>
+              </div>
+              <div>
+            <input type="range" min="0" max="1" step="0.01" id="canVol" value="0.5">
+        </div>
+            <button id="fileOnButton">Play</button>
+            <button id="fileOffButton">Stop</button>
+            </div>
+        </div>
+    </div>
+
+
+        <div class="column">
+            <h2>Effects</h2>
+            <div>
+                <button id="ringModulator">Ring Modulator off</button>
+                <p>Speed</p>
+                <input type="range" min="0" max="1" step="0.01" id="ringModulatorSpeed">
+                <p>Distortion</p>
+                <input type="range" min="0" max="100" step="1" id="ringModulatorDistortion">
+            </div>
+            <div>
+                <button id="dubDelay">Dub Delay off</button>
+                <p>Time</p>
+                <input type="range" min="0" max="1" step="0.01" id="dubDelayTime">
+                <p>Feedback</p>
+                <input type="range" min="0" max="1" step="0.01" id="dubDelayFeedback">
+                <p>Cutoff</p>
+                <input type="range" min="0" max="4000" step="1" id="dubDelayCutoff">
+            </div>
+            <div>
+                <button id="verbEffect">Reverb Off</button>
+                <p>Decay</p>
+                <input type="range" min="0" max="10" step="0.01" id="verbDecay">
+            </div>
+        </div>
+
+    </div>
+    </section>
+
+
+    <script>
+        //-----------------------var/obj--------------------------
+
+        var fileSound = new Pizzicato.Sound({ 
+        source: 'file',
+        options: { path: './coke.mp3' , loop: true}
+    }, function() {
+        console.log('sound file loaded!');
+    });
+
+
+        waveformSelect = document.getElementById('waveformSelect')
+
+        selectedWaveform = new Pizzicato.Sound({
+            source: 'wave',
+            options: {type: waveformSelect.value, frequency: 400, volume: 1}
+            
+        });
+        
+        
+        waveformSelect.addEventListener('change', function() {
+            selectedWaveform.stop();
+            selectedWaveform = new Pizzicato.Sound({
+            source: 'wave',
+            options: {type: this.value, frequency: 400, volume: 1}
+            }
+            );
+        console.log("Selected waveform type:", selectedWaveform);
+
+
+
+    });
+
+        var ringModulatorIO = false;
+        var ringModulator = new Pizzicato.Effects.RingModulator({
+            speed: 10,
+            distortion: 4,
+            mix: 0.5
+        });
+
+        var dubDelayIO = false;
+        var dubDelay = new Pizzicato.Effects.DubDelay({
+            feedback: 0.6,
+            time: 0.3,
+            mix: 0.5,
+            cutoff: 700
+        });
+
+        var reverbIO = false;
+
+        var reverb = new Pizzicato.Effects.Reverb({
+            time: 1,
+            decay: 1,
+            reverse: false,
+            mix: 0.5
+        
+        })
+        
+
+        //-----------------------Oscillators--------------------------
+
+
+
+        document.getElementById('oscOnButton').addEventListener('click', function () {
+            selectedWaveform.play();
+        });
+
+        document.getElementById('oscOffButton').addEventListener('click', function () {
+            selectedWaveform.stop();
+        });
+
+        document.getElementById('freq').addEventListener('input', function (event) {
+            event.preventDefault(); // Prevent default browser behavior
+            selectedWaveform.frequency = parseFloat(this.value);
+        });
+
+        document.getElementById('vol').addEventListener('input', function () {
+            selectedWaveform.volume = parseFloat(this.value);
+        });
+
+
+
+        //-----------------------Audio Files--------------------------
+
+        document.getElementById('canVol').addEventListener('input', function(event) {
+            fileSound.volume = parseFloat(this.value);
+            console.log("fileSound volume:", fileSound.volume)
+        });
+        
+        document.getElementById('fileOnButton').addEventListener('click', function () {
+        if (fileSound) {
+            fileSound.play();
+        }
+        });
+
+        document.getElementById('fileOffButton').addEventListener('click', function () {
+        if (fileSound) {
+            fileSound.stop();
+        }
+        });
+
+        //-------------------------Ring Modulator---------------------------------------
+        document.getElementById('ringModulatorSpeed').addEventListener('input', function () {
+            ringModulator.speed = parseFloat(this.value);
+        });
+        document.getElementById('ringModulatorDistortion').addEventListener('input', function () {
+            ringModulator.distortion = parseFloat(this.value);
+        });
+
+        document.getElementById('ringModulator').addEventListener('click', function () {
+            var ringModulatorTag = document.getElementById('ringModulator');
+            if (ringModulatorIO) {
+                selectedWaveform.removeEffect(ringModulator);
+                fileSound.removeEffect(ringModulator);
+                ringModulatorTag.innerHTML = "Ring Modulator Off";
+            } else {
+                selectedWaveform.addEffect(ringModulator);
+                fileSound.addEffect(ringModulator);
+                ringModulatorTag.innerHTML = "Ring Modulator on";
+            }
+            ringModulatorIO = !ringModulatorIO; // Invert RingModulatorIO
+        });
+        //----------------------------Dub Delay-------------------------------------------
+        document.getElementById('dubDelayTime').addEventListener('input', function () {
+            dubDelay.time = parseFloat(this.value);
+        });
+        document.getElementById('dubDelayFeedback').addEventListener('input', function () {
+            dubDelay.feedback = parseFloat(this.value);
+        });
+        document.getElementById('dubDelayCutoff').addEventListener('input', function () {
+            dubDelay.cutoff = parseFloat(this.value);
+        });
+
+        document.getElementById('dubDelay').addEventListener('click', function () {
+            var dubDelayTag = document.getElementById('dubDelay');
+            if (dubDelayIO) {
+                selectedWaveform.removeEffect(dubDelay);
+                fileSound.removeEffect(dubDelay);
+                dubDelayTag.innerHTML = "Dub Delay off"; 
+            } else {
+                selectedWaveform.addEffect(dubDelay);
+                fileSound.addEffect(dubDelay);
+                dubDelayTag.innerHTML = "Dub Delay on";
+            }
+            dubDelayIO = !dubDelayIO; // Invert state of  Dub Delay
+        });
+        //--------------------------------Reverb-------------------------------------------
+        document.getElementById('verbDecay').addEventListener('input', function (event) {
+            reverb.decay = parseFloat(this.value);
+        })
+
+        document.getElementById('verbEffect').addEventListener('click', function () {
+            var reverbTag = document.getElementById('verbEffect');
+            if (reverbIO) {
+                selectedWaveform.removeEffect(reverb);
+                fileSound.removeEffect(reverb);
+                reverbTag.innerHTML =  "Reverb off"
+            } else {
+                selectedWaveform.addEffect(reverb);
+                fileSound.addEffect(reverb);
+                reverbTag.innerHTML = "Reverb on"
+            }
+            reverbIO = !reverbIO; // Invert state of Reverb
+        })
+    </script>
+</body>
+
+</html>
